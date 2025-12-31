@@ -43,7 +43,10 @@ class CallOption(FBSNN):
         # X: Batch of terminal states, size M x D
         # Returns the terminal condition for each instance in the batch, size M x 1
         temp = torch.sum(X, dim=1, keepdim=True)
-        return torch.maximum(temp - self.strike, torch.tensor(0.0))
+        #------------------------------------------------
+        # return torch.maximum(temp - self.strike, torch.tensor(0.0))
+        #------------------------------------------------
+        return torch.maximum(temp - self.strike, torch.tensor(0.0).to(self.device))
 
     def mu_tf(self, t, X, Y, Z): 
         # μ = r·X
