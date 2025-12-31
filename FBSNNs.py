@@ -11,6 +11,12 @@ from Models import *
 
 class FBSNN(ABC):
     def __init__(self, Xi, T, M, N, D, Mm, layers, mode, activation):
+#         作用：初始化神经网络和所有参数
+# 关键步骤：
+#   1. 检测CUDA可用性（GPU加速）
+#   2. 转换初始条件为PyTorch张量
+#   3. 根据mode选择网络架构（FC或Naisnet）
+#   4. 应用Xavier初始化权重
         # Constructor for the FBSNN class
         # Initializes the neural network with specified parameters and architecture
         
@@ -24,14 +30,25 @@ class FBSNN(ABC):
         # layers: List indicating the size of each layer in the neural network
         # mode: Specifies the architecture of the neural network (e.g., 'FC' for fully connected)
         # activation: Activation function to be used in the neural network
-
+        # ------------
         # Check if CUDA is available and set the appropriate device (GPU or CPU)
+        # device_idx = 0
+        # if torch.cuda.is_available():
+        #     self.device = torch.device("cuda:" + str(device_idx) if torch.cuda.is_available() else "cpu")
+        #     torch.backends.cudnn.deterministic = True
+        # else:
+        #     self.device = torch.device("cpu")
+        # ------------
+        # Check if CUDA or MPS is available and set the appropriate device (GPU or CPU)
         device_idx = 0
         if torch.cuda.is_available():
-            self.device = torch.device("cuda:" + str(device_idx) if torch.cuda.is_available() else "cpu")
+            self.device = torch.device("cuda:" + str(device_idx))
             torch.backends.cudnn.deterministic = True
+        elif torch.backends.mps.is_available():
+            self.device = torch.device("mps")
         else:
             self.device = torch.device("cpu")
+          
 
         # Initialize the initial condition, convert it to a PyTorch tensor, and send to the device
         self.Xi = torch.from_numpy(Xi).float().to(self.device)  # initial point
@@ -86,6 +103,12 @@ class FBSNN(ABC):
             torch.nn.init.xavier_uniform_(m.weight)
 
     def net_u(self, t, X):  # M x 1, M x D
+#         输入：时间 t (M×1)，状态 X (M×D)
+# 过程：
+#   1. 拼接 [t, X] 作为神经网络输入
+#   2. 前向传播得到 u (M×1)
+#   3. 自动微分计算 ∂u/∂X = Z (M×D)
+# 输出：值函数u和梯度Z
         # Computes the output of the neural network and its gradient with respect to the input state X
         # Parameters:
         # t: A batch of time instances, with dimensions M x 1
@@ -93,20 +116,56 @@ class FBSNN(ABC):
 
         # Concatenate the time and state variables along second dimension
         # to form the input for the neural network
+        """
+        计算神经网络的输出及其对输入状态X的梯度
+        
+        参数:
+            t: 时间实例的批次，维度为 M x 1
+            X: 状态变量的批次，维度为 M x D
+        
+        返回:
+            u: 神经网络在每组输入(t, X)处的值函数，维度为 M x 1
+            Du: 输出u关于状态变量X的梯度，维度为 M x D
+        """
+                # 沿第二维拼接时间和状态变量，形成神经网络的输入
         input = torch.cat((t, X), 1)  
 
         # Pass the concatenated input through the neural network model
         # The output u is a tensor of dimensions M x 1, representing the value function at each input (t, X)
+             # 将拼接后的输入传入神经网络模型
+        # 输出u是一个维度为M x 1的张量，表示每组输入(t, X)处的值函数
         u = self.model(input)  # M x 1
 
         # Compute the gradient of the output u with respect to the state variables X
         # The gradient is calculated for each input in the batch, resulting in a tensor of dimensions M x D
+                # 计算输出u关于状态变量X的梯度
+        # 梯度是针对批次中的每个输入计算的，结果是一个维度为M x D的张量
         Du = torch.autograd.grad(outputs=[u], inputs=[X], grad_outputs=torch.ones_like(u), 
                                 allow_unused=True, retain_graph=True, create_graph=True)[0]
 
         return u, Du
 
     def Dg_tf(self, X):  # M x D
+
+        """
+        计算函数g关于输入X的梯度
+        
+        参数:
+            X: 状态变量的批次，维度为 M x D
+            
+        返回:
+            Dg: 函数g关于输入X的梯度，维度为 M x D
+        
+        详细说明:
+            1. 首先调用g_tf方法计算函数g在输入X处的值
+            2. 使用torch.autograd.grad计算g关于X的梯度
+            3. grad_outputs参数设置为与g形状相同的全1张量，表示对g的所有分量平等对待
+            4. allow_unused=True允许输入变量未在计算中被使用的情况
+            5. retain_graph=True保留计算图，允许后续的梯度计算
+            6. create_graph=True创建梯度计算图，使返回的梯度本身可继续求导
+        """
+        # 计算函数g在输入X处的值
+
         # Calculates the gradient of the function g with respect to the input X
         # Parameters:
         # X: A batch of state variables, with dimensions M x D
@@ -115,6 +174,9 @@ class FBSNN(ABC):
 
         # Now, compute the gradient of g with respect to X
         # The gradient is calculated for each input in the batch, resulting in a tensor of dimensions M x D
+       
+        # 计算g关于输入X的梯度
+        # 梯度是针对批次中的每个输入计算的，结果是一个维度为M x D的张量 
         Dg = torch.autograd.grad(outputs=[g], inputs=[X], grad_outputs=torch.ones_like(g), 
                                 allow_unused=True, retain_graph=True, create_graph=True)[0] 
 
@@ -122,6 +184,20 @@ class FBSNN(ABC):
 
 
     def loss_function(self, t, W, Xi):
+#         实现离散时间随机方程的训练：
+  
+#   步骤1:  X_0 = Xi （初始状态）
+#         Y_0, Z_0 = net_u(t_0, X_0)
+  
+#   步骤2: 对每个时间步n (Euler-Maruyama方法)
+#         ├─ X_{n+1} = X_n + μ(t_n,X_n)·Δt + σ(t_n,X_n)·ΔW_n
+#         ├─ Y_{n+1}^~ = Y_n + φ(t_n,X_n)·Δt + Z_n·σ·ΔW_n
+#         ├─ Y_{n+1}, Z_{n+1} = net_u(t_{n+1}, X_{n+1})
+#         └─ Loss += ||Y_{n+1} - Y_{n+1}^~||²
+  
+#   步骤3: 终端条件约束
+#         ├─ Loss += ||Y_T - g(X_T)||² （价格约束）
+#         └─ Loss += ||Z_T - ∇g(X_T)||² （梯度约束）
         # Calculates the loss for the neural network
         # Parameters:
         # t: A batch of time instances, with dimensions M x (N+1) x 1
@@ -218,6 +294,12 @@ class FBSNN(ABC):
         return t, W
 
     def train(self, N_Iter, learning_rate):
+#         逐迭代优化：
+#   1. 动态调整时间步数N（多尺度训练）
+#   2. Adam优化器反向传播
+#   3. 梯度剪裁（防止爆炸）
+#   4. 每100步输出训练进度
+
         # Train the neural network model.
         # Parameters:
         # N_Iter: Number of iterations for the training process
@@ -312,6 +394,8 @@ class FBSNN(ABC):
 
     @abstractmethod
     def phi_tf(self, t, X, Y, Z):  # M x 1, M x D, M x 1, M x D
+        #后向随机微分方程的漂移项
+
         # Abstract method for defining the drift term in the SDE
         # Parameters:
         # t: Time instances, size M x 1
@@ -323,6 +407,8 @@ class FBSNN(ABC):
 
     @abstractmethod
     def g_tf(self, X):  # M x D
+        # 终端条件函数\
+        
         # Abstract method for defining the terminal condition of the SDE
         # Parameter:
         # X: Terminal state variables, size M x D
@@ -331,6 +417,8 @@ class FBSNN(ABC):
 
     @abstractmethod
     def mu_tf(self, t, X, Y, Z):  # M x 1, M x D, M x 1, M x D
+          # 前向随机微分方程的漂移项
+
         # Abstract method for defining the drift coefficient of the underlying stochastic process
         # Parameters:
         # t: Time instances, size M x 1
@@ -344,6 +432,8 @@ class FBSNN(ABC):
 
     @abstractmethod
     def sigma_tf(self, t, X, Y):  # M x 1, M x D, M x 1
+        # 前向随机微分方程的扩散项
+
         # Abstract method for defining the diffusion coefficient of the underlying stochastic process
         # Parameters:
         # t: Time instances, size M x 1

@@ -29,7 +29,7 @@ The Forward-Backward Stochastic Neural Network (FBSNN) is a specialized neural n
 ### 1. **Physics-Informed Learning**
 The network is built on the principle that neural network parameters should be optimized to satisfy the differential equations that govern the physical system, not just to fit training data.
 
-```
+```math
 L_total = L_data + λ_physics * L_physics
 ```
 
