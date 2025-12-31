@@ -5,6 +5,7 @@ import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.cuda.amp import autocast, GradScaler
 
 from cqf_Models import *
 from cqf_utils import setup_device
@@ -301,6 +302,7 @@ class FBSNN(ABC):
 #   2. Adam优化器反向传播
 #   3. 梯度剪裁（防止爆炸）
 #   4. 每100步输出训练进度
+#   5. 自动混合精度训练（AMP）加速
 
         # Train the neural network model.
         # Parameters:
@@ -317,6 +319,9 @@ class FBSNN(ABC):
 
         # Set up the optimizer (Adam) for the neural network with the specified learning rate
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+
+        # Initialize GradScaler for AMP (only if using GPU)
+        scaler = GradScaler() if self.device.type != 'cpu' else None
 
         # Record the start time for timing the training process
         start_time = time.time()
@@ -335,13 +340,27 @@ class FBSNN(ABC):
             t_batch, W_batch = self.fetch_minibatch()  # M x (N+1) x 1, M x (N+1) x D
 
             # Compute the loss for the current batch
-            loss, X_pred, Y_pred, Y0_pred = self.loss_function(t_batch, W_batch, self.Xi)
-            # Perform backpropagation
-            self.optimizer.zero_grad()  # Zero the gradients again to ensure correct gradient accumulation
-            loss.backward()  # Compute the gradients of the loss w.r.t. the network parameters
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
-            
-            self.optimizer.step()  # Update the network parameters based on the gradients
+            if scaler:
+                with autocast():
+                    loss, X_pred, Y_pred, Y0_pred = self.loss_function(t_batch, W_batch, self.Xi)
+                # Perform backpropagation
+                self.optimizer.zero_grad()  # Zero the gradients again to ensure correct gradient accumulation
+                scaler.scale(loss).backward()
+                # Unscale gradients for clipping
+                scaler.unscale_(self.optimizer)
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+                # Update weights
+                scaler.step(self.optimizer)
+                # Update scaler
+                scaler.update()
+            else:
+                # Fallback to regular training without AMP
+                loss, X_pred, Y_pred, Y0_pred = self.loss_function(t_batch, W_batch, self.Xi)
+                # Perform backpropagation
+                self.optimizer.zero_grad()  # Zero the gradients again to ensure correct gradient accumulation
+                loss.backward()  # Compute the gradients of the loss w.r.t. the network parameters
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+                self.optimizer.step()  # Update the network parameters based on the gradients
 
             # Store the current loss value for later averaging
             loss_temp = np.append(loss_temp, loss.cpu().detach().numpy())
