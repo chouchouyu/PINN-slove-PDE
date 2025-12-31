@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from Models import *
+from cqf_Models import *
 
 
 class FBSNN(ABC):

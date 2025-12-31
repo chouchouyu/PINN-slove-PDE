@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import torch
 import numpy as np
 from BlackScholesBarenblatt import *
-from FBSNNs import *
+from cqf_FBSNNs import *
 import sys
 import os
 sys.path.append(os.path.abspath("Algorithms/"))

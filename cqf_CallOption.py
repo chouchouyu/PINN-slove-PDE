@@ -3,7 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 import time
 
-from FBSNNs import FBSNN
+from cqf_FBSNNs import FBSNN
 
 
 class CallOption(FBSNN):

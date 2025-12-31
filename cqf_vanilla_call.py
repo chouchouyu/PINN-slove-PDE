@@ -1,5 +1,7 @@
 import sys
 import os
+
+from cqf_utils import set_seed
 sys.path.append(os.path.abspath("Algorithms/"))
 sys.path.append(os.path.abspath("models/"))
 #%%
@@ -45,7 +47,7 @@ graph = model.train(n_iter, lr)
 print("total time:", time.time() - tot, "s")
 #%%
 
-np.random.seed(37)
+set_seed(37)
 t_test, W_test = model.fetch_minibatch()
 X_pred, Y_pred = model.predict(Xi, t_test, W_test)
 

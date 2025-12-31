@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.abspath("Algorithms/"))
 sys.path.append(os.path.abspath("models/"))
-from FBSNNs import *
+from cqf_FBSNNs import *
 from BlackScholesBarenblatt import *
 import numpy as np
 import torch

@@ -3,8 +3,8 @@ import os
 sys.path.append(os.path.abspath("Algorithms/"))
 sys.path.append(os.path.abspath("models/"))
 #%%
-from FBSNNs import *
-from CallOption import *
+from cqf_FBSNNs import *
+from cqf_CallOption import *
 #%%
 import numpy as np
 import torch

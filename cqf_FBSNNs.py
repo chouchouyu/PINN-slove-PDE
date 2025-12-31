@@ -6,7 +6,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from Models import *
+from cqf_Models import *
+from cqf_utils import setup_device
 
 
 class FBSNN(ABC):
@@ -40,15 +41,16 @@ class FBSNN(ABC):
         #     self.device = torch.device("cpu")
         # ------------
         # Check if CUDA or MPS is available and set the appropriate device (GPU or CPU)
-        device_idx = 0
-        if torch.cuda.is_available():
-            self.device = torch.device("cuda:" + str(device_idx))
-            torch.backends.cudnn.deterministic = True
-        elif torch.backends.mps.is_available():
-            self.device = torch.device("mps")
-        else:
-            self.device = torch.device("cpu")
-          
+        # device_idx = 0
+        # if torch.cuda.is_available():
+        #     self.device = torch.device("cuda:" + str(device_idx))
+        #     torch.backends.cudnn.deterministic = True
+        # elif torch.backends.mps.is_available():
+        #     self.device = torch.device("mps")
+        # else:
+        #     self.device = torch.device("cpu")
+        # ------------
+        self.device, device_type = setup_device()
 
         # Initialize the initial condition, convert it to a PyTorch tensor, and send to the device
         self.Xi = torch.from_numpy(Xi).float().to(self.device)  # initial point
