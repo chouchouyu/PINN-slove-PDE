@@ -50,6 +50,14 @@ if type(Y_pred).__module__ != 'numpy':
 
 Y_test = np.reshape(u_exact(T,np.reshape(t_test[0:M, :, :], [-1, 1]), np.reshape(X_pred[0:M, :, :], [-1, D])),
                     [M, -1, 1])
+
+
+# 创建Figures目录（如果不存在）
+save_dir = "Figures"
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
+
+    
 plt.figure(figsize=figsize(1))
 plt.plot(graph[0], graph[1])
 plt.xlabel('Iterations')
