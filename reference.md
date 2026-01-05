@@ -180,3 +180,8 @@ https://yb.tencent.com/s/FOfiFJDUkllN
 "@testset "DeepBSDE_H..."点击查看元宝的回答
 https://yb.tencent.com/s/3gjUHdpLONWQ
 必看
+
+"前面自适应性蒙特卡洛怎么用在美式期权上？"点击查看元宝的回答
+https://yb.tencent.com/s/BeDZB6MqIWNe
+
+https://mp.weixin.qq.com/s/bKc3bdP1BR6yrIwIZeDkyQ

@@ -22,7 +22,7 @@ def price_path(S0, vol, r, q, t,n):
 
 
 # 定义LSM美式期权定价函数：
-
+ 
 
 def LSM(S0,K,vol,r,q,t,n,call_or_put):
     
