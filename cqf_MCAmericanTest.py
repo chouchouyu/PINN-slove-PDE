@@ -1,4 +1,5 @@
 import sys, os
+import time
 
 from cqf_mc_American import MC_American_Option, Paths_generater
   
@@ -81,16 +82,45 @@ class Test():
         # when init = 100, price is 10.072509537503821/9.992812015410516, real is 9.6333
 
 
+    def test_100d_pricing(self):
+        np.random.seed(123)
+        strike = 100
+        asset_num = 100
+        init_price_vec = 100 + np.random.randn(asset_num) * 5
+        vol_vec = 0.2 + np.random.rand(asset_num) * 0.1
+        ir = 0.05
+        dividend_vec = 0.02 + np.random.rand(asset_num) * 0.03
         
-  
+        corr_mat = np.eye(asset_num)
+        for i in range(asset_num):
+            for j in range(i+1, asset_num):
+                corr = np.random.rand() * 0.1
+                corr_mat[i, j] = corr
+                corr_mat[j, i] = corr
+        
+        random_walk = Paths_generater(1, 50, init_price_vec, ir, vol_vec, dividend_vec, corr_mat)
+        
+        def test_payoff(*l):
+            return max(np.max(l) - strike, 0)
+        
+        opt = MC_American_Option(random_walk, test_payoff)
+        
+        start_time = time.time()
+        price = opt.price(100)
+        end_time = time.time()
+        
+        print(f"100维美式期权价格: {price}")
+        print(f"运行时间: {end_time - start_time:.4f} 秒")
+        # - 100维美式期权价格 : 95.46420911718947
+        # - 运行时间 : 168.2666 秒（约2.8分钟）
+
+
 
 if __name__ == '__main__':
     # unittest.main()
     test=Test()
-    test.test_get_discounted_cashflow_at_t0()
-    test.test_get_discounted_cashflow()
-    test.test_price1d()  
-    test.test_price2d()  
-    
- 
-  
+    # test.test_get_discounted_cashflow_at_t0()
+    # test.test_get_discounted_cashflow()
+    # test.test_price1d()  
+    # test.test_price2d()
+    test.test_100d_pricing()
