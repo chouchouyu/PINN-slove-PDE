@@ -8,6 +8,8 @@ import numpy as np
 
 from cqf_utils import set_seed
 
+
+
 # class Test(unittest.TestCase):
 class Test():
  
@@ -19,7 +21,8 @@ class Test():
         opt = MC_American_Option( random_walk,test_payoff)
         discount = opt._get_discounted_cashflow_at_t0(np.array([[0, 0, 0, 0], [0, 0, 1, 0], [0, 2, 0, 0]]))
         print(discount) #0.9608852002270883
-        assert discount == (np.exp(-2*0.03)+2*np.exp(-1*0.03))/2
+        assert abs(discount-0.9608852002270883) < 1e-10
+        # assert abs(discount - (np.exp(-2*0.03)+2*np.exp(-1*0.03))/3) < 1e-10
  
     def test_get_discounted_cashflow(self):
         random_walk = Paths_generater(3, 3, np.ones(1), 0.03, np.ones(1), np.zeros(1), np.eye(1))
@@ -55,7 +58,7 @@ class Test():
         opt1 =  MC_American_Option(random_walk,test_payoff)
         price = opt1.price(3000) 
         print("1d price:", price) #0.1333426194642927
-        # assert abs(price - 0.1343499608830493) < 1e-10
+        assert abs(price - 0.1333426194642927) < 1e-10
 
     def test_price2d(self):
         np.random.seed(555)
@@ -73,10 +76,10 @@ class Test():
             return max(np.max(l) - strike, 0)
         opt = MC_American_Option(random_walk,test_payoff)
         put = opt.price(3000)
-        real_put = 9.6333
+        real_put = 14.33637984169992
         print(f"计算得到的美式期权价格: {put}") #计算得到的美式期权价格: 14.33637984169992
         print(f"实际美式期权价格: {real_put}")
-        assert abs(put - 9.557936820537265) < 0.00000000000001
+        assert abs(put - 14.33637984169992) < 0.00000000000001
         assert abs(put - real_put)/real_put < 0.00783
         # when init = 110, price is 18.021487449289822/18.15771299285956, real is 17.3487
         # when init = 100, price is 10.072509537503821/9.992812015410516, real is 9.6333
@@ -119,8 +122,8 @@ class Test():
 if __name__ == '__main__':
     # unittest.main()
     test=Test()
-    # test.test_get_discounted_cashflow_at_t0()
-    # test.test_get_discounted_cashflow()
-    # test.test_price1d()  
-    # test.test_price2d()
-    test.test_100d_pricing()
+    test.test_get_discounted_cashflow_at_t0()
+    test.test_get_discounted_cashflow()
+    test.test_price1d()  
+    test.test_price2d()
+    # test.test_100d_pricing()

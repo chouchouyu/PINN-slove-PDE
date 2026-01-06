@@ -171,17 +171,11 @@ class MC_American_Option:
         
         返回: 平均折现价值
         """
-        # ir = 
-        # dt = 
-        
         # 提取第1列到最后一列的数据 (与 American.py 一致)
         future_cashflows = cashflow_matrix[:, 1:]
         
         # 查找每行第一个非零值的位置
         first_nonzero_positions = np.argmax(future_cashflows != 0, axis=1)
-        
-        # 检查是否存在非零值
-        has_cashflow = np.any(future_cashflows != 0, axis=1)
         
         # 计算对应的时间索引 (从1开始)
         time_indices = first_nonzero_positions + 1
@@ -192,8 +186,8 @@ class MC_American_Option:
         # 获取对应的现金流值并折扣
         discounted_values = future_cashflows[np.arange(len(cashflow_matrix)), first_nonzero_positions] * discount_factors
         
-        # 只考虑有现金流的路径
-        return discounted_values[has_cashflow].mean()
+        # 对所有路径取平均，包括没有现金流的路径 (与 American.py 一致)
+        return discounted_values.mean()
 
 if __name__ == "__main__":
     set_seed(444)
