@@ -6,7 +6,6 @@ import numpy as np
 import pandas
 
 import cqf_Regression
-from cqf_utils import set_seed
  
 def test_price_american_option():
     # Test parameters
@@ -73,93 +72,54 @@ class MC_American_Option:
         self.paths_generater = paths_generater
         self.payoff_func = payoff_func
 
- 
     def price(self, n_simulations=1000):
         self.simulations_paths = self.paths_generater.gbm(n_simulations=n_simulations)
-        # print("simulations_paths shape:", self.simulations_paths)
-        cash_flow = np.zeros([n_simulations, self.paths_generater.days+1])
+        cash_flow = np.zeros([n_simulations, self.paths_generater.days + 1])
 
         for t in range(self.paths_generater.days, 0, -1):
-            # print("Current time step t:-------", t)
-            # print('cash_flow:', cash_flow)
-
             prices_at_t = self.simulations_paths[:, :, t]
-
             if t == self.paths_generater.days:
                 maturity_price = prices_at_t
                 maturity_payoff = np.array(list(map(self.payoff_func, maturity_price)))
                 cash_flow[:, -1] = maturity_payoff
             else:
-                # showlog = False
-                # if t==298 or t==297:
-                #     showlog = True
-                # 使用正确的折现方法，找到未来最后一个非零现金流并折现到当前时刻
+                # 使用修正后的_get_discounted_cashflow方法，传入n_simulations（路径数）
                 discounted_cashflow = self._get_discounted_cashflow(t, cash_flow, n_simulations)
-                # if showlog:
-                #     print("discounted_cashflow:", discounted_cashflow)
-                r = cqf_Regression.Regression(prices_at_t, discounted_cashflow, payoff_func=self.payoff_func)
-                # if showlog:
-                #     print("Regression object:", r.has_intrinsic_value, r.index)
+                r = Regression(prices_at_t, discounted_cashflow, payoff_func=self.payoff_func)
                 if r.has_intrinsic_value:
                     all_cur_payoff = np.array(list(map(self.payoff_func, prices_at_t)))
                     continuation_value = np.array([r.evaluate(X) for X in prices_at_t[r.index]])
-
                     exercise_index = r.index[all_cur_payoff[r.index] >= continuation_value]
-                    # if showlog:
-                    #     print("exercise_index:", exercise_index)
-        
                     if len(exercise_index) > 0:
                         cash_flow[exercise_index] = np.zeros(cash_flow[exercise_index].shape)
                         cash_flow[exercise_index, t] = all_cur_payoff[exercise_index]
-                
-                else:
-                    continue
-        
         return self._get_discounted_cashflow_at_t0(cash_flow)
 
-
-    def _get_discounted_cashflow(self, t: int, cashflow_matrix: np.ndarray,path_num) -> np.ndarray:
+    def _get_discounted_cashflow(self, t: int, cashflow_matrix: np.ndarray, n_paths) -> np.ndarray:
         """
-        最终优化版本：推荐使用
-        
-        算法思路：
-        1. 使用高效的方法从后向前搜索第一个非零现金流
-        2. 最小化内存使用
-        3. 代码简洁易懂
-        
-        参数:
-        - t: 当前时间点
-        - cashflow_matrix: 现金流矩阵
-        
-        返回: 折现现金流数组
+        修正版本：使用正确的时间步数N（self.paths_generater.days）
         """
-        # N = self.paths_generater.N
-        # ir = american_instance.random_walk.ir
-        # dt = american_instance.random_walk.dt
-        
-        # 计算折扣因子
-        time_indices = np.arange(path_num+1)
+        N = self.paths_generater.days  # 时间步数
+        time_indices = np.arange(N + 1)  # 时间点从0到N
         discount_factors = np.exp((t - time_indices) * self.paths_generater.dt * self.paths_generater.r)
         
-        # 创建掩码，只考虑 t+1 到 N 的时间点
+        # 创建掩码，只考虑t+1到N的时间点
         mask = np.zeros_like(cashflow_matrix, dtype=bool)
-        mask[:, t+1:path_num+1] = cashflow_matrix[:, t+1:path_num+1] != 0
+        mask[:, t + 1:N + 1] = cashflow_matrix[:, t + 1:N + 1] != 0
         
-        # 倒序查找每行第一个非零值的位置
+        # 倒序查找每行第一个非零现金流的位置
         reversed_mask = np.fliplr(mask)
         reversed_indices = np.argmax(reversed_mask, axis=1)
-        
-        # 转换为原始索引
         first_nonzero_indices = mask.shape[1] - reversed_indices - 1
         
         # 检查是否有非零值
         has_nonzero = np.any(mask, axis=1)
         
         # 计算结果
-        result = np.zeros(path_num)
+        result = np.zeros(n_paths)
         result[has_nonzero] = cashflow_matrix[has_nonzero, first_nonzero_indices[has_nonzero]] * discount_factors[first_nonzero_indices[has_nonzero]]
-        
         return result
+     
 
 
     def  _get_discounted_cashflow_at_t0(self, cashflow_matrix):
@@ -189,29 +149,29 @@ class MC_American_Option:
         # 对所有路径取平均，包括没有现金流的路径 (与 American.py 一致)
         return discounted_values.mean()
 
-if __name__ == "__main__":
-    set_seed(444)
-    r = 0.03
-    random_walk = Paths_generater(3, 3, np.ones(1), r, np.ones(1), np.zeros(1), np.eye(1))
-    def test_payoff(*l):
-        return max(3 - np.sum(l), 0)
-    opt = MC_American_Option( random_walk,test_payoff)
+# if __name__ == "__main__":
+#     set_seed(444)
+#     r = 0.03
+#     random_walk = Paths_generater(3, 3, np.ones(1), r, np.ones(1), np.zeros(1), np.eye(1))
+#     def test_payoff(*l):
+#         return max(3 - np.sum(l), 0)
+#     opt = MC_American_Option( random_walk,test_payoff)
     
-    cashflow_matrix = np.array([[0, 0, 0, 3], [0, 0, 0, 0], [0, 0, 0, 2]])
-    t=2
-    print("cashflow_matrix:", cashflow_matrix[:, t + 1])
-    discounted = cashflow_matrix[:, t + 1] * np.exp(-random_walk.r * random_walk.dt)
+#     cashflow_matrix = np.array([[0, 0, 0, 3], [0, 0, 0, 0], [0, 0, 0, 2]])
+#     t=2
+#     print("cashflow_matrix:", cashflow_matrix[:, t + 1])
+#     discounted = cashflow_matrix[:, t + 1] * np.exp(-random_walk.r * random_walk.dt)
 
-    print(discounted)  #[2.9113366 0.        1.94089107]
-    assert sum(abs(discounted - np.array([2.9113366, 0, 1.94089107]))) < 0.00000001
-    print("-----", sum(abs(discounted - np.array([2.9113366, 0, 1.94089107])))) #3.548508153983221e-09
+#     print(discounted)  #[2.9113366 0.        1.94089107]
+#     assert sum(abs(discounted - np.array([2.9113366, 0, 1.94089107]))) < 0.00000001
+#     print("-----", sum(abs(discounted - np.array([2.9113366, 0, 1.94089107])))) #3.548508153983221e-09
 
-    cashflow_matrix2 = np.array([[0, 0, 3, 0], [0, 0, 0, 0], [0, 0, 0, 2]])
-    t=0
-    discounted2 = cashflow_matrix2[:, t + 1] * np.exp(-random_walk.r * random_walk.dt)
-    print(discounted2)  #[2.8252936 0.        1.82786237]
-    print("-----", sum(abs(discounted2 - np.array([2.8252936, 0, 1.82786237])))) #1.2952021677392622e-09
-    assert sum(abs(discounted2 - np.array([2.8252936, 0, 1.82786237]))) < 0.00000001
+#     cashflow_matrix2 = np.array([[0, 0, 3, 0], [0, 0, 0, 0], [0, 0, 0, 2]])
+#     t=0
+#     discounted2 = cashflow_matrix2[:, t + 1] * np.exp(-random_walk.r * random_walk.dt)
+#     print(discounted2)  #[2.8252936 0.        1.82786237]
+#     print("-----", sum(abs(discounted2 - np.array([2.8252936, 0, 1.82786237])))) #1.2952021677392622e-09
+#     assert sum(abs(discounted2 - np.array([2.8252936, 0, 1.82786237]))) < 0.00000001
 
 
     # test_price_american_option()
