@@ -68,8 +68,9 @@ class BlackScholesBarenblattSolver:
         self.m = 30  # 训练轨迹数
         
         # Legendre变换参数
-        self.A = torch.linspace(-2.0, 2.0, 401, device=device)  # 控制变量范围
-        self.u_domain = torch.linspace(-10.0, 10.0, 201, device=device)  # u的取值范围
+        self.A = torch.linspace(-2.0, 2.0, 401, device=device)  # 控制变量范围 - 与Julia原文件一致
+        # 与Julia原文件一致的设置（之前: torch.linspace(-10.0, 10.0, 201, device=device)）
+        self.u_domain = torch.linspace(-500.0, 500.0, 10001, device=device)  # u的取值范围
         
         # 网络初始化
         self.hls = 10 + d  # 隐藏层大小
@@ -459,9 +460,9 @@ def main():
     solver_limits = BlackScholesBarenblattSolver(d=30)
     result_limits = solver_limits.solve(
         limits=True, 
-        trajectories_upper=100,  # 减少轨迹数以加速演示
-        trajectories_lower=100,
-        maxiters_limits=5,       # 减少优化次数以加速演示
+        trajectories_upper=1000,  # 与Julia原文件一致 (之前: 100)
+        trajectories_lower=1000,  # 与Julia原文件一致 (之前: 100)
+        maxiters_limits=10,       # 与Julia原文件一致 (之前: 5)
         verbose=True
     )
     
