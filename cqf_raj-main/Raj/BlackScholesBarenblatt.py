@@ -3,7 +3,7 @@ import torch
 import matplotlib.pyplot as plt
 import time
 
-from cqf_FBSNNs import FBSNN
+from FBSNNs import FBSNN
 
 
 class BlackScholesBarenblatt(FBSNN):

@@ -1,0 +1,134 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# PyTorch
+*.pth
+*.pt
+*.onnx
+*.pkl
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# Models and Checkpoints
+models/
+*.model
+*.weights
+*.h5
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.env
+.env.local
+.env.*.local
+.venv/
+
+# OS Files
+.DS_Store
+Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Output Files
+Figures/
+figures/
+output/
+results/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pdf
+*.svg
+
+# Data Files
+*.csv
+*.json
+*.xml
+*.mat
+
+# Compiled Files
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+
+# Distribution Files
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Testing
+htmlcov/
+.coverage
+.coverage.*
+.pytest_cache/
+.tox/
+
+# Temporary Files
+*.tmp
+*.temp
+.temp/
+
+# Documentation
+/docs/_build/
+docs/build/
+
+# Julia
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+
+# Deep Learning
+*.npy
+*.npz
+*.h5
+*.tfevents*
+
+# IDE Specific
+.project
+.classpath
+.settings/
+
+# Version Control
+.gitattributes
+.travis.yml
+.gitlab-ci.yml
+.codeclimate.yml
+
+# Misc
+*.bak
+*.old
+*.orig
+*.sync
+*.swp
+*.swo
+
+# Comparison Results
+comparison_results/
+*_Comparison.md
+*_Analysis.md
+*_Summary.md
