@@ -5,71 +5,75 @@ import os
 import torch
 from cqf.deepbsde.BlackScholesBarenblatt import BlackScholesBarenblatt
 from cqf.deepbsde.DeepBSDE import BlackScholesBarenblattSolver, rel_error_l2
+from cqf.fbsnn.Utils import figsize
 
+# Set model parameters - same structure as BlackScholesBarenblatt100D.py
+D = 30  # Problem dimension (30D Black-Scholes-Barenblatt equation)
+M = 100  # Number of trajectories per training batch
+N = 50  # Number of discretization points on the time axis
 
-def figsize(scale, nplots=1):
-    """生成符合LaTeX排版要求的图形尺寸"""
-    fig_width_pt = 438.17227
-    inches_per_pt = 1.0/72.27
-    golden_mean = (np.sqrt(5.0)-1.0)/2.0
-    fig_width = fig_width_pt*inches_per_pt*scale
-    fig_height = nplots*fig_width*golden_mean
-    fig_size = [fig_width, fig_height]
-    return fig_size
-
-
-# 模型参数设置 - 与 BlackScholesBarenblatt100D.py 相同结构
-D = 30  # 问题维度（30维Black-Scholes-Barenblatt方程）
-M = 100  # 每批次训练的轨迹数量
-N = 50  # 时间轴上的离散点数量
-
-# 创建results目录
-figures_dir = "results"
+# Create Figures directory
+figures_dir = "Figures"
+# Check if the directory exists
 if not os.path.exists(figures_dir):
+    # Create the directory if it doesn't exist
     os.makedirs(figures_dir)
 
+# Print header for the 30D BSB equation solving
+print("=== 30D Black-Scholes-Barenblatt Equation Solving ===")
+print("Using DeepBSDE method")
 
-print("=== 30维Black-Scholes-Barenblatt方程求解 ===")
-print("使用DeepBSDE方法")
-
-# 创建求解器实例
+# Create solver instance
 start_time = time.time()
+# Initialize the solver with dimension D
 solver = BlackScholesBarenblattSolver(d=D)
 
-# 训练求解器 - 使用标准DeepBSDE算法
+# Train the solver - using standard DeepBSDE algorithm
+# limits=False means we don't compute upper/lower bounds
 result = solver.solve(limits=False, verbose=True)
 
+# Calculate total computation time
 total_time = time.time() - start_time
-print(f"总计算时间: {total_time:.2f} 秒")
+print(f"Total computation time: {total_time:.2f} seconds")
 
-
-# 获取训练历史
+# Get training history
+# Create list of iteration numbers
 iterations = list(range(len(solver.losses)))
+# Store training losses
 training_loss = solver.losses
 
-
-# 1. 绘制训练损失曲线
+# 1. Plot the training loss curve
 plt.figure(figsize=figsize(1))
+# Plot iterations vs training loss with blue line
 plt.plot(iterations, training_loss, 'b')
+# Set x-axis label
 plt.xlabel('Iterations')
+# Set y-axis label
 plt.ylabel('Loss')
+# Use log scale for y-axis
 plt.yscale("log")
+# Set plot title
 plt.title('Evolution of the training loss')
+# Save the figure to file
 plt.savefig(f"{figures_dir}/DeepBSDE_BlackScholesBarenblattSolver30D_Loss.png")
+# Close the plot to free memory
 plt.close()
-print("已保存训练损失曲线")
+print("Training loss curve saved")
 
-
-
-# 计算DeepBSDE估计值与解析解的相对误差
+# Calculate relative error between DeepBSDE estimate and analytical solution
+# Get initial condition
 x0 = solver.x0
+# Get DeepBSDE estimated solution
 u_deepbsde = result.us
+# Calculate analytical solution at time 0
 u_analytical = solver.analytical_solution(x0, 0).item()
+# Calculate relative L2 error
 relative_error = rel_error_l2(u_deepbsde, u_analytical)
 
-# 输出结果总结
-print("\n=== 结果总结 ===")
-print(f"DeepBSDE估计值 (u0): {u_deepbsde:.6f}")
-print(f"解析解 (u0): {u_analytical:.6f}")
-print(f"相对误差: {relative_error:.6f} ({relative_error*100:.4f}%)")
-print(f"\n生成结果图片已保存到 {os.path.abspath(figures_dir)}/DeepBSDE_BlackScholesBarenblattSolver30D_Loss.png")
+# Output summary of results
+print("\n=== Results Summary ===")
+print(f"DeepBSDE estimate (u0): {u_deepbsde:.6f}")
+print(f"Analytical solution (u0): {u_analytical:.6f}")
+print(f"Relative error: {relative_error:.6f} ({relative_error*100:.4f}%)")
+# Print path where results are saved
+print(f"\nResult images saved to {os.path.abspath(figures_dir)}/DeepBSDE_BlackScholesBarenblattSolver30D_Loss.png")

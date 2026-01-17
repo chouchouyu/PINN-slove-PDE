@@ -143,4 +143,4 @@ if __name__ == "__main__":
         if u_low <= u_point <= u_high:
             print("✓ 点估计在上下界范围内")
         else:
-            print("✗ 点估计超出上下界范围,不可信")
+            print("✗ 点估计超出上下界范围")
