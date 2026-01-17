@@ -1,4 +1,6 @@
 import time
+
+
 import unittest
 import numpy as np
 
@@ -95,9 +97,9 @@ class Test(unittest.TestCase):
         put = opt.price(3000)
         real_put = 9.600595700658381
         print(
-            f"Calculated American option price: {put}"
-        )  # Calculated American option price: 14.33637984169992
-        print(f"Actual American option price: {real_put}")
+            f"计算得到的美式期权价格: {put}"
+        )  # 计算得到的美式期权价格: 14.33637984169992
+        print(f"实际美式期权价格: {real_put}")
         # assert abs(put - 9.557936820537265) < 0.00000000000001
         assert abs(put - real_put) / real_put < 0.00783
 
@@ -130,8 +132,8 @@ class Test(unittest.TestCase):
         price = opt.price(100)
         end_time = time.time()
 
-        print(f"100-dimensional American option price: {price}")
-        print(f"Runtime: {end_time - start_time:.4f} seconds")
+        print(f"100维美式期权价格: {price}")
+        print(f"运行时间: {end_time - start_time:.4f} 秒")
         # - 100维美式期权价格 : 95.46420911718947
         # - 运行时间 : 168.2666 秒（约2.8分钟）
 

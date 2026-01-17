@@ -8,9 +8,6 @@ from cqf.deepbsde.DeepBSDE import BlackScholesBarenblattSolver, rel_error_l2
 from cqf.fbsnn.Utils import figsize
 
 
-
-
-
 # 模型参数设置 - 与 BlackScholesBarenblatt100D.py 相同结构
 D = 30  # 问题维度（30维Black-Scholes-Barenblatt方程）
 M = 100  # 每批次训练的轨迹数量
@@ -43,15 +40,14 @@ training_loss = solver.losses
 
 # 1. 绘制训练损失曲线
 plt.figure(figsize=figsize(1))
-plt.plot(iterations, training_loss, 'b')
-plt.xlabel('Iterations')
-plt.ylabel('Loss')
+plt.plot(iterations, training_loss, "b")
+plt.xlabel("Iterations")
+plt.ylabel("Loss")
 plt.yscale("log")
-plt.title('Evolution of the training loss')
+plt.title("Evolution of the training loss")
 plt.savefig(f"{figures_dir}/DeepBSDE_BlackScholesBarenblattSolver30D_Loss.png")
 plt.close()
 print("已保存训练损失曲线")
-
 
 
 # 计算DeepBSDE估计值与解析解的相对误差
@@ -65,4 +61,6 @@ print("\n=== 结果总结 ===")
 print(f"DeepBSDE估计值 (u0): {u_deepbsde:.6f}")
 print(f"解析解 (u0): {u_analytical:.6f}")
 print(f"相对误差: {relative_error:.6f} ({relative_error*100:.4f}%)")
-print(f"\n生成结果图片已保存到 {os.path.abspath(figures_dir)}/DeepBSDE_BlackScholesBarenblattSolver30D_Loss.png")
+print(
+    f"\n生成结果图片已保存到 {os.path.abspath(figures_dir)}/DeepBSDE_BlackScholesBarenblattSolver30D_Loss.png"
+)

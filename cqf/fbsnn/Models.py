@@ -5,6 +5,7 @@ import torch.nn.functional as F
 
 class Sine(nn.Module):
     """This class defines the sine activation function as a nn.Module"""
+
     def __init__(self):
         super(Sine, self).__init__()
 
@@ -35,7 +36,7 @@ class Naisnet(nn.Module):
 
         self.epsilon = 0.01
         self.stable = stable
-    #  ---Keep---
+
     def project(self, layer, out):  # Building block for the NAIS-Net
         weights = layer.weight
         delta = 1 - 2 * self.epsilon
@@ -44,9 +45,9 @@ class Naisnet(nn.Module):
         if norm > delta:
             RtR = delta ** (1 / 2) * RtR / (norm ** (1 / 2))
         # A = RtR + torch.eye(RtR.shape[0]).cuda() * self.epsilon
-        #----------------------------------------------------
+        # ----------------------------------------------------
         # A = RtR + torch.eye(RtR.shape[0])* self.epsilon
-        #----------------------------------------------------
+        # ----------------------------------------------------
         A = RtR + torch.eye(RtR.shape[0], device=RtR.device) * self.epsilon
 
         return F.linear(out, -A, layer.bias)
@@ -82,7 +83,7 @@ class Naisnet(nn.Module):
 
             out = self.layer4(out)
             return out
-        
+
         if len(self.layers) == 6:
             shortcut = out
             if self.stable:
@@ -92,7 +93,6 @@ class Naisnet(nn.Module):
                 out = self.layer3(out)
             out = self.activation(out)
             out = out + shortcut
-
 
             shortcut = out
             if self.stable:

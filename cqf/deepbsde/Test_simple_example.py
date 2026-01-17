@@ -3,9 +3,16 @@ import matplotlib.pyplot as plt
 import time
 import os
 import torch
+
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
 from cqf.deepbsde.BlackScholesBarenblatt import BlackScholesBarenblatt
 from cqf.deepbsde.DeepBSDE import BlackScholesBarenblattSolver, rel_error_l2
 from cqf.fbsnn.Utils import figsize
+
 
 # Set model parameters - same structure as BlackScholesBarenblatt100D.py
 D = 30  # Problem dimension (30D Black-Scholes-Barenblatt equation)
@@ -45,15 +52,15 @@ training_loss = solver.losses
 # 1. Plot the training loss curve
 plt.figure(figsize=figsize(1))
 # Plot iterations vs training loss with blue line
-plt.plot(iterations, training_loss, 'b')
+plt.plot(iterations, training_loss, "b")
 # Set x-axis label
-plt.xlabel('Iterations')
+plt.xlabel("Iterations")
 # Set y-axis label
-plt.ylabel('Loss')
+plt.ylabel("Loss")
 # Use log scale for y-axis
 plt.yscale("log")
 # Set plot title
-plt.title('Evolution of the training loss')
+plt.title("Evolution of the training loss")
 # Save the figure to file
 plt.savefig(f"{figures_dir}/DeepBSDE_BlackScholesBarenblattSolver30D_Loss.png")
 # Close the plot to free memory
@@ -76,4 +83,6 @@ print(f"DeepBSDE estimate (u0): {u_deepbsde:.6f}")
 print(f"Analytical solution (u0): {u_analytical:.6f}")
 print(f"Relative error: {relative_error:.6f} ({relative_error*100:.4f}%)")
 # Print path where results are saved
-print(f"\nResult images saved to {os.path.abspath(figures_dir)}/DeepBSDE_BlackScholesBarenblattSolver30D_Loss.png")
+print(
+    f"\nResult images saved to {os.path.abspath(figures_dir)}/DeepBSDE_BlackScholesBarenblattSolver30D_Loss.png"
+)

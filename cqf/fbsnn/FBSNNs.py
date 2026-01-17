@@ -13,15 +13,9 @@ from .Utils import setup_device
 
 class FBSNN(ABC):
     def __init__(self, Xi, T, M, N, D, Mm, layers, mode, activation):
-#         作用：初始化神经网络和所有参数
-# 关键步骤：
-#   1. 检测CUDA可用性（GPU加速）
-#   2. 转换初始条件为PyTorch张量
-#   3. 根据mode选择网络架构（FC或Naisnet）
-#   4. 应用Xavier初始化权重
         # Constructor for the FBSNN class
         # Initializes the neural network with specified parameters and architecture
-        
+
         # Parameters:
         # Xi: Initial condition (numpy array) for the stochastic process
         # T: Terminal time
@@ -79,14 +73,20 @@ class FBSNN(ABC):
             # Fully Connected architecture
             self.layers = []
             for i in range(len(layers) - 2):
-                self.layers.append(nn.Linear(in_features=layers[i], out_features=layers[i + 1]))
+                self.layers.append(
+                    nn.Linear(in_features=layers[i], out_features=layers[i + 1])
+                )
                 self.layers.append(self.activation_function)
-            self.layers.append(nn.Linear(in_features=layers[-2], out_features=layers[-1]))
+            self.layers.append(
+                nn.Linear(in_features=layers[-2], out_features=layers[-1])
+            )
             self.model = nn.Sequential(*self.layers).to(self.device)
 
         elif self.mode == "Naisnet":
             # NAIS-Net architecture
-            self.model = Naisnet(layers, stable=True, activation=self.activation_function).to(self.device)
+            self.model = Naisnet(
+                layers, stable=True, activation=self.activation_function
+            ).to(self.device)
 
         # Apply a custom weights initialization to the model.
         self.model.apply(self.weights_init)
@@ -94,7 +94,6 @@ class FBSNN(ABC):
         # Initialize lists to record training loss and iterations.
         self.training_loss = []
         self.iteration = []
-
 
     def weights_init(self, m):
         # Custom weight initialization method for neural network layers
@@ -106,12 +105,6 @@ class FBSNN(ABC):
             torch.nn.init.xavier_uniform_(m.weight)
 
     def net_u(self, t, X):  # M x 1, M x D
-#         输入：时间 t (M×1)，状态 X (M×D)
-# 过程：
-#   1. 拼接 [t, X] 作为神经网络输入
-#   2. 前向传播得到 u (M×1)
-#   3. 自动微分计算 ∂u/∂X = Z (M×D)
-# 输出：值函数u和梯度Z
         # Computes the output of the neural network and its gradient with respect to the input state X
         # Parameters:
         # t: A batch of time instances, with dimensions M x 1
@@ -119,56 +112,26 @@ class FBSNN(ABC):
 
         # Concatenate the time and state variables along second dimension
         # to form the input for the neural network
-        """
-        计算神经网络的输出及其对输入状态X的梯度
-        
-        参数:
-            t: 时间实例的批次，维度为 M x 1
-            X: 状态变量的批次，维度为 M x D
-        
-        返回:
-            u: 神经网络在每组输入(t, X)处的值函数，维度为 M x 1
-            Du: 输出u关于状态变量X的梯度，维度为 M x D
-        """
-                # 沿第二维拼接时间和状态变量，形成神经网络的输入
-        input = torch.cat((t, X), 1)  
+        input = torch.cat((t, X), 1)
 
         # Pass the concatenated input through the neural network model
         # The output u is a tensor of dimensions M x 1, representing the value function at each input (t, X)
-             # 将拼接后的输入传入神经网络模型
-        # 输出u是一个维度为M x 1的张量，表示每组输入(t, X)处的值函数
         u = self.model(input)  # M x 1
 
         # Compute the gradient of the output u with respect to the state variables X
         # The gradient is calculated for each input in the batch, resulting in a tensor of dimensions M x D
-                # 计算输出u关于状态变量X的梯度
-        # 梯度是针对批次中的每个输入计算的，结果是一个维度为M x D的张量
-        Du = torch.autograd.grad(outputs=[u], inputs=[X], grad_outputs=torch.ones_like(u), 
-                                allow_unused=True, retain_graph=True, create_graph=True)[0]
+        Du = torch.autograd.grad(
+            outputs=[u],
+            inputs=[X],
+            grad_outputs=torch.ones_like(u),
+            allow_unused=True,
+            retain_graph=True,
+            create_graph=True,
+        )[0]
 
         return u, Du
 
     def Dg_tf(self, X):  # M x D
-
-        """
-        计算函数g关于输入X的梯度
-        
-        参数:
-            X: 状态变量的批次，维度为 M x D
-            
-        返回:
-            Dg: 函数g关于输入X的梯度，维度为 M x D
-        
-        详细说明:
-            1. 首先调用g_tf方法计算函数g在输入X处的值
-            2. 使用torch.autograd.grad计算g关于X的梯度
-            3. grad_outputs参数设置为与g形状相同的全1张量，表示对g的所有分量平等对待
-            4. allow_unused=True允许输入变量未在计算中被使用的情况
-            5. retain_graph=True保留计算图，允许后续的梯度计算
-            6. create_graph=True创建梯度计算图，使返回的梯度本身可继续求导
-        """
-        # 计算函数g在输入X处的值
-
         # Calculates the gradient of the function g with respect to the input X
         # Parameters:
         # X: A batch of state variables, with dimensions M x D
@@ -177,30 +140,18 @@ class FBSNN(ABC):
 
         # Now, compute the gradient of g with respect to X
         # The gradient is calculated for each input in the batch, resulting in a tensor of dimensions M x D
-       
-        # 计算g关于输入X的梯度
-        # 梯度是针对批次中的每个输入计算的，结果是一个维度为M x D的张量 
-        Dg = torch.autograd.grad(outputs=[g], inputs=[X], grad_outputs=torch.ones_like(g), 
-                                allow_unused=True, retain_graph=True, create_graph=True)[0] 
+        Dg = torch.autograd.grad(
+            outputs=[g],
+            inputs=[X],
+            grad_outputs=torch.ones_like(g),
+            allow_unused=True,
+            retain_graph=True,
+            create_graph=True,
+        )[0]
 
         return Dg
 
-
     def loss_function(self, t, W, Xi):
-#         实现离散时间随机方程的训练：
-  
-#   步骤1:  X_0 = Xi （初始状态）
-#         Y_0, Z_0 = net_u(t_0, X_0)
-  
-#   步骤2: 对每个时间步n (Euler-Maruyama方法)
-#         ├─ X_{n+1} = X_n + μ(t_n,X_n)·Δt + σ(t_n,X_n)·ΔW_n
-#         ├─ Y_{n+1}^~ = Y_n + φ(t_n,X_n)·Δt + Z_n·σ·ΔW_n
-#         ├─ Y_{n+1}, Z_{n+1} = net_u(t_{n+1}, X_{n+1})
-#         └─ Loss += ||Y_{n+1} - Y_{n+1}^~||²
-  
-#   步骤3: 终端条件约束
-#         ├─ Loss += ||Y_T - g(X_T)||² （价格约束）
-#         └─ Loss += ||Z_T - ∇g(X_T)||² （梯度约束）
         # Calculates the loss for the neural network
         # Parameters:
         # t: A batch of time instances, with dimensions M x (N+1) x 1
@@ -217,7 +168,9 @@ class FBSNN(ABC):
 
         # Initial state for all trajectories
         X0 = Xi.repeat(self.M, 1).view(self.M, self.D)  # M x D
-        Y0, Z0 = self.net_u(t0, X0)  # Obtain the network output and its gradient at the initial state
+        Y0, Z0 = self.net_u(
+            t0, X0
+        )  # Obtain the network output and its gradient at the initial state
 
         # Store the initial state and the network output
         X_list.append(X0)
@@ -229,14 +182,29 @@ class FBSNN(ABC):
             t1 = t[:, n + 1, :]
             W1 = W[:, n + 1, :]
             # Compute the next state using the Euler-Maruyama method
-            X1 = X0 + self.mu_tf(t0, X0, Y0, Z0) * (t1 - t0) + torch.squeeze(
-                torch.matmul(self.sigma_tf(t0, X0, Y0), (W1 - W0).unsqueeze(-1)), dim=-1)
-            
+            X1 = (
+                X0
+                + self.mu_tf(t0, X0, Y0, Z0) * (t1 - t0)
+                + torch.squeeze(
+                    torch.matmul(self.sigma_tf(t0, X0, Y0), (W1 - W0).unsqueeze(-1)),
+                    dim=-1,
+                )
+            )
+
             # Compute the predicted value (Y1_tilde) at the next state
-            Y1_tilde = Y0 + self.phi_tf(t0, X0, Y0, Z0) * (t1 - t0) + torch.sum(
-                Z0 * torch.squeeze(torch.matmul(self.sigma_tf(t0, X0, Y0), (W1 - W0).unsqueeze(-1))), dim=1,
-                keepdim=True)
-            
+            Y1_tilde = (
+                Y0
+                + self.phi_tf(t0, X0, Y0, Z0) * (t1 - t0)
+                + torch.sum(
+                    Z0
+                    * torch.squeeze(
+                        torch.matmul(self.sigma_tf(t0, X0, Y0), (W1 - W0).unsqueeze(-1))
+                    ),
+                    dim=1,
+                    keepdim=True,
+                )
+            )
+
             # Obtain the network output and its gradient at the next state
             Y1, Z1 = self.net_u(t1, X1)
             # Add the squared difference between Y1 and Y1_tilde to the loss
@@ -249,7 +217,7 @@ class FBSNN(ABC):
             X_list.append(X0)
             Y_list.append(Y0)
 
-        # Add the terminal condition to the loss: 
+        # Add the terminal condition to the loss:
         # the difference between the network output and the target at the final state
         loss += torch.sum(torch.pow(Y1 - self.g_tf(X1), 2))
         # Add the difference between the network's gradient and the gradient of g at the final state
@@ -263,7 +231,6 @@ class FBSNN(ABC):
         # The final element returned is the first element of the network output, for reference or further use
         return loss, X, Y, Y[0, 0, 0]
 
-
     def fetch_minibatch(self):  # Generate time + a Brownian motion
         # Generates a minibatch of time steps and corresponding Brownian motion paths
 
@@ -273,8 +240,12 @@ class FBSNN(ABC):
         D = self.D  # Number of dimensions
 
         # Initialize arrays for time steps and Brownian increments
-        Dt = np.zeros((M, N + 1, 1))  # Time step sizes for each trajectory and time snapshot
-        DW = np.zeros((M, N + 1, D))  # Brownian increments for each trajectory, time snapshot, and dimension
+        Dt = np.zeros(
+            (M, N + 1, 1)
+        )  # Time step sizes for each trajectory and time snapshot
+        DW = np.zeros(
+            (M, N + 1, D)
+        )  # Brownian increments for each trajectory, time snapshot, and dimension
 
         # Calculate the time step size
         dt = T / N
@@ -283,11 +254,17 @@ class FBSNN(ABC):
         Dt[:, 1:, :] = dt
         # Generate Brownian increments for each trajectory and time snapshot
         DW_uncorrelated = np.sqrt(dt) * np.random.normal(size=(M, N, D))
-        DW[:, 1:, :] = DW_uncorrelated # np.einsum('ij,mnj->mni', self.L, DW_uncorrelated) # Apply Cholesky matrix to introduce correlations
+        DW[:, 1:, :] = (
+            DW_uncorrelated  # np.einsum('ij,mnj->mni', self.L, DW_uncorrelated) # Apply Cholesky matrix to introduce correlations
+        )
 
         # Cumulatively sum the time steps and Brownian increments to get the actual time values and Brownian paths
-        t = np.cumsum(Dt, axis=1)  # Cumulative time for each trajectory and time snapshot
-        W = np.cumsum(DW, axis=1)  # Cumulative Brownian motion for each trajectory, time snapshot, and dimension
+        t = np.cumsum(
+            Dt, axis=1
+        )  # Cumulative time for each trajectory and time snapshot
+        W = np.cumsum(
+            DW, axis=1
+        )  # Cumulative Brownian motion for each trajectory, time snapshot, and dimension
 
         # Convert the numpy arrays to PyTorch tensors and transfer them to the configured device (CPU or GPU)
         t = torch.from_numpy(t).float().to(self.device)
@@ -297,13 +274,6 @@ class FBSNN(ABC):
         return t, W
 
     def train(self, N_Iter, learning_rate):
-#         逐迭代优化：
-#   1. 动态调整时间步数N（多尺度训练）
-#   2. Adam优化器反向传播
-#   3. 梯度剪裁（防止爆炸）
-#   4. 每100步输出训练进度
-#   5. 自动混合精度训练（AMP）加速
-
         # Train the neural network model.
         # Parameters:
         # N_Iter: Number of iterations for the training process
@@ -321,13 +291,13 @@ class FBSNN(ABC):
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
 
         # Initialize GradScaler for AMP (only if using GPU)
-        scaler = GradScaler() if self.device.type != 'cpu' else None
+        scaler = GradScaler() if self.device.type != "cpu" else None
 
         # Record the start time for timing the training process
         start_time = time.time()
         # Training loop
         for it in range(previous_it, previous_it + N_Iter):
-            
+
             if it >= 4000 and it < 20000:
                 self.N = int(np.ceil(self.Mm ** (int(it / 4000) + 1)))
             elif it < 4000:
@@ -342,7 +312,9 @@ class FBSNN(ABC):
             # Compute the loss for the current batch
             if scaler:
                 with autocast():
-                    loss, X_pred, Y_pred, Y0_pred = self.loss_function(t_batch, W_batch, self.Xi)
+                    loss, X_pred, Y_pred, Y0_pred = self.loss_function(
+                        t_batch, W_batch, self.Xi
+                    )
                 # Perform backpropagation
                 self.optimizer.zero_grad()  # Zero the gradients again to ensure correct gradient accumulation
                 scaler.scale(loss).backward()
@@ -355,7 +327,9 @@ class FBSNN(ABC):
                 scaler.update()
             else:
                 # Fallback to regular training without AMP
-                loss, X_pred, Y_pred, Y0_pred = self.loss_function(t_batch, W_batch, self.Xi)
+                loss, X_pred, Y_pred, Y0_pred = self.loss_function(
+                    t_batch, W_batch, self.Xi
+                )
                 # Perform backpropagation
                 self.optimizer.zero_grad()  # Zero the gradients again to ensure correct gradient accumulation
                 loss.backward()  # Compute the gradients of the loss w.r.t. the network parameters
@@ -367,9 +341,13 @@ class FBSNN(ABC):
             # Print the training progress every 100 iterations
             if it % 100 == 0:
                 elapsed = time.time() - start_time  # Calculate the elapsed time
-                print('It: %d, Loss: %.3e, Y0: %.3f, Time: %.2f, Learning Rate: %.3e' %
-                    (it, loss, Y0_pred, elapsed, learning_rate))
-                start_time = time.time()  # Reset the start time for the next print interval
+                print(
+                    "It: %d, Loss: %.3e, Y0: %.3f, Time: %.2f, Learning Rate: %.3e"
+                    % (it, loss, Y0_pred, elapsed, learning_rate)
+                )
+                start_time = (
+                    time.time()
+                )  # Reset the start time for the next print interval
 
             # Record the average loss and iteration number every 100 iterations
             if it % 100 == 0:
@@ -401,21 +379,24 @@ class FBSNN(ABC):
         return X_star, Y_star
 
     def save_model(self, file_name):
-        torch.save({
-            'model_state_dict': self.model.state_dict(),
-            'training_loss': self.training_loss,
-            'iteration': self.iteration
-        }, file_name)
-    
+        torch.save(
+            {
+                "model_state_dict": self.model.state_dict(),
+                "training_loss": self.training_loss,
+                "iteration": self.iteration,
+            },
+            file_name,
+        )
+
     def load_model(self, file_name):
         checkpoint = torch.load(file_name, map_location=self.device)
-        self.model.load_state_dict(checkpoint['model_state_dict'])
-        self.training_loss = checkpoint['training_loss']
-        self.iteration = checkpoint['iteration']
+        self.model.load_state_dict(checkpoint["model_state_dict"])
+        self.training_loss = checkpoint["training_loss"]
+        self.iteration = checkpoint["iteration"]
 
     @abstractmethod
     def phi_tf(self, t, X, Y, Z):  # M x 1, M x D, M x 1, M x D
-        #后向随机微分方程的漂移项
+        # 后向随机微分方程的漂移项
 
         # Abstract method for defining the drift term in the SDE
         # Parameters:
@@ -429,7 +410,7 @@ class FBSNN(ABC):
     @abstractmethod
     def g_tf(self, X):  # M x D
         # 终端条件函数\
-        
+
         # Abstract method for defining the terminal condition of the SDE
         # Parameter:
         # X: Terminal state variables, size M x D
@@ -438,7 +419,7 @@ class FBSNN(ABC):
 
     @abstractmethod
     def mu_tf(self, t, X, Y, Z):  # M x 1, M x D, M x 1, M x D
-          # 前向随机微分方程的漂移项
+        # 前向随机微分方程的漂移项
 
         # Abstract method for defining the drift coefficient of the underlying stochastic process
         # Parameters:
