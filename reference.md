@@ -149,9 +149,7 @@ from https://zhuanlan.zhihu.com/p/22754445
 
 
 
-"解释这段代码 尤其 每一句的输出的数据大..."点击查看元宝的回答
-https://yb.tencent.com/s/nbRWEwYuQqjj
-5维资产
+ 
 
 
 "这两个代码 有什么区别？为什么要有这些区..."点击查看元宝的回答
@@ -185,3 +183,4 @@ https://yb.tencent.com/s/3gjUHdpLONWQ
 https://yb.tencent.com/s/BeDZB6MqIWNe
 
 https://mp.weixin.qq.com/s/bKc3bdP1BR6yrIwIZeDkyQ
+美式期权(一)：最小二乘蒙特卡洛模拟定价(LSM)

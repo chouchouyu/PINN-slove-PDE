@@ -8,11 +8,9 @@ import matplotlib.pyplot as plt
 np.random.seed(100)
 torch.manual_seed(100)
 
-# "这个Python代码和之前 求解 Bla..."点击查看元宝的回答
-# https://yb.tencent.com/s/uVs5cJKFdmTS
 
-# "那么根据建议你在其之上尽可能改成juli..."点击查看元宝的回答
-# https://yb.tencent.com/s/UP7xg6Uef6nX
+
+ 
 
 def rel_error_l2(u, uanal):
     if abs(uanal) >= 10 * np.finfo(type(uanal)).eps:

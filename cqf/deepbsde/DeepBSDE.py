@@ -21,24 +21,28 @@ def rel_error_l2(u, uanal):
 class BlackScholesBarenblattSolver(BlackScholesBarenblatt):
     """Black-Scholes-Barenblatt方程求解器"""
     
-    def __init__(self, d=30, device='cuda' if torch.cuda.is_available() else 'cpu'):
+    def __init__(self, d=30, x0=None, tspan=(0.0, 1.0), dt=0.25, m=30, device='cuda' if torch.cuda.is_available() else 'cpu'):
         # 调用父类构造函数
         super().__init__(d)
         
         self.device = device
         
         # 初始条件和时间设置
-        self.x0 = torch.tensor([1.0 if i % 2 == 0 else 0.5 for i in range(d)], 
-                              dtype=torch.float32, device=device)
-        self.tspan = (0.0, 1.0)
-        self.dt = 0.25
+        if x0 is None:
+            self.x0 = torch.tensor([1.0 if i % 2 == 0 else 0.5 for i in range(d)], 
+                                  dtype=torch.float32, device=device)
+        else:
+            self.x0 = torch.tensor(x0, dtype=torch.float32, device=device).squeeze(0)
+        
+        self.tspan = tspan
+        self.dt = dt
         self.time_steps = int((self.tspan[1] - self.tspan[0]) / self.dt)
-        self.m = 30  # 训练轨迹数
+        self.m = m  # 训练轨迹数
         
         # Legendre变换参数
-        self.A = torch.linspace(-2.0, 2.0, 401, device=device)  # 控制变量范围
-        self.u_domain = torch.linspace(-10.0, 10.0, 201, device=device)  # u的取值范围
-        
+        self.A = torch.linspace(-2.0, 2.0, 401, device=device)  # 控制变量范围 - 与Julia原文件一致
+        self.u_domain = torch.linspace(-500.0, 500.0, 10001, device=device)  # u的取值范围
+                
         # 网络初始化
         self.hls = 10 + d  # 隐藏层大小
         self.u0 = U0Network(d, self.hls).to(device)
@@ -77,7 +81,7 @@ class BlackScholesBarenblattSolver(BlackScholesBarenblatt):
             dW = torch.randn(batch_size, self.d, device=self.device) * np.sqrt(self.dt)
             
             # 更新u
-            f_val = self.f(X, u, sigma_grad_u_val, t)
+            f_val = self.phi_tf(X, u, sigma_grad_u_val, t)
             u = u - f_val * self.dt + torch.sum(sigma_grad_u_val * dW, dim=1, keepdim=True)
             
             # 更新X - 修复矩阵乘法维度问题

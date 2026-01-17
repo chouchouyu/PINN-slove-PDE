@@ -24,7 +24,7 @@ mode = "FC"  # FC and Naisnet are available
 activation = "ReLU"  # Sine, ReLU and Tanh are available
 model = BlackScholesBarenblatt(Xi, T, M, N, D, Mm, layers, mode, activation)
 
-n_iter = 2 * 10 ** 4
+n_iter = 2 * 10 ** 4 #100
 lr = 1e-3
 tot = time.time()
 print(model.device)

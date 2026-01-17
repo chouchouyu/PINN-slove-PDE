@@ -128,3 +128,14 @@ def setup_device():
 # 设置设备
 # device, device_type = setup_device()
 # print(f"当前使用设备类型: {device_type}")
+
+
+def figsize(scale, nplots=1):
+    """计算图表尺寸，使用黄金比例"""
+    fig_width_pt = 438.17227
+    inches_per_pt = 1.0/72.27
+    golden_mean = (np.sqrt(5.0)-1.0)/2.0
+    fig_width = fig_width_pt*inches_per_pt*scale
+    fig_height = nplots*fig_width*golden_mean
+    fig_size = [fig_width, fig_height]
+    return fig_size

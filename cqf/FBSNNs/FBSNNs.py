@@ -7,8 +7,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import autocast, GradScaler
 
-from Models import *
-from Utils import setup_device
+from .Models import *
+from .Utils import setup_device
 
 
 class FBSNN(ABC):

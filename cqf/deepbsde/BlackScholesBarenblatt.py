@@ -12,8 +12,8 @@ class BlackScholesBarenblatt:
         """终端条件：g(X) = sum(X^2)"""
         return torch.sum(X**2, dim=1, keepdim=True)
     
-    def f(self, X, u, sigma_grad_u, t):
-        """非线性项：f(X, u, σᵀ∇u, p, t) = r * (u - sum(X * σᵀ∇u))"""
+    def phi_tf(self, X, u, sigma_grad_u, t):
+        """非线性项：phi(X, u, σᵀ∇u, p, t) = r * (u - sum(X * σᵀ∇u))"""
         return self.r * (u - torch.sum(X * sigma_grad_u, dim=1, keepdim=True))
     
     def mu_tf(self, X, t):
@@ -30,8 +30,7 @@ class BlackScholesBarenblatt:
             batch_size = X.shape[0]
             return torch.diag_embed(self.sigma * X)
     
-    def analytical_solution(self, x, t):
+    def analytical_solution(self, x, t, T=1.0):
         """解析解"""
-        T = 1.0  # 默认时间范围为0到1
         exponent = (self.r + self.sigma**2) * (T - t)
         return torch.exp(torch.tensor(exponent, device=x.device)) * torch.sum(x**2)

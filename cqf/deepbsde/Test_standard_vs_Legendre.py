@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from .BlackScholesBarenblatt import BlackScholesBarenblatt
-from .DeepBSDE import BlackScholesBarenblattSolver, rel_error_l2
+from cqf.deepbsde.BlackScholesBarenblatt import BlackScholesBarenblatt
+from cqf.deepbsde.DeepBSDE import BlackScholesBarenblattSolver, rel_error_l2
+
 
 
 def test_standard_deepbsde(d=30, verbose=True):
@@ -57,9 +58,9 @@ def test_legendre_deepbsde(d=30, verbose=True):
     solver_limits = BlackScholesBarenblattSolver(d=d)
     result_limits = solver_limits.solve(
         limits=True, 
-        trajectories_upper=100,  # 减少轨迹数以加速演示
-        trajectories_lower=100,
-        maxiters_limits=5,       # 减少优化次数以加速演示
+        trajectories_upper=1000,  # 与Julia原文件一致 (之前: 100)
+        trajectories_lower=1000,  # 与Julia原文件一致 (之前: 100)
+        maxiters_limits=10,       # 与Julia原文件一致 (之前: 5)
         verbose=verbose
     )
     
@@ -77,15 +78,9 @@ def test_legendre_deepbsde(d=30, verbose=True):
     return solver_limits, result_limits, error_limits
 
 
-def main():
-    """主测试函数 - 调用两个测试方法并绘制结果
-    
-    返回:
-    solver_std: 标准算法求解器
-    solver_limits: 带Legendre变换的求解器
-    result_std: 标准算法求解结果
-    result_limits: 带Legendre变换的求解结果
-    """
+
+
+if __name__ == "__main__":
     # 调用两个测试方法
     solver_std, result_std, error_std = test_standard_deepbsde(verbose=True)
     solver_limits, result_limits, error_limits = test_legendre_deepbsde(verbose=True)
@@ -124,8 +119,15 @@ def main():
         plt.legend()
         plt.grid(True, alpha=0.3)
     
+    # 创建results目录（如果不存在）
+    import os
+    results_dir = "results"
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+    
     plt.tight_layout()
-    plt.show()
+    plt.savefig(os.path.join(results_dir, "DeepBSDE_standard_vs_Legendre.png"))
+    plt.close()
     
     # 验证结果
     print(f"\n验证结果:")
@@ -142,9 +144,3 @@ def main():
             print("✓ 点估计在上下界范围内")
         else:
             print("✗ 点估计超出上下界范围")
-    
-    return solver_std, solver_limits, result_std, result_limits
-
-
-if __name__ == "__main__":
-    solver_std, solver_limits, result_std, result_limits = main()
