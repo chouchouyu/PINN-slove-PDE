@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+整合版Black-Scholes-Barenblatt模型训练器
+结合FormalTrainer和run_model的功能
+"""
+
 import sys
 import os
 import numpy as np
@@ -7,29 +14,31 @@ import datetime
 import warnings
 
 warnings.filterwarnings("ignore")
- 
+
+# 添加路径
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from fbsnn.BlackScholesBarenblatt import BlackScholesBarenblatt, u_exact
 from fbsnn.Utils import figsize, set_seed, setup_device
 
- 
+# 确保导入matplotlib
 import matplotlib.pyplot as plt
 
+# 设置中文支持
 plt.rcParams["font.sans-serif"] = ["Arial Unicode MS", "Heiti TC", "Microsoft YaHei"]
 plt.rcParams["axes.unicode_minus"] = False
 
 
 class FormalTrainer:
-    """Formal Trainer: Train BlackScholesBarenblatt model using optimal parameters from Optuna optimization"""
+    """正式训练器：使用Optuna优化得到的最佳模型和参数训练BlackScholesBarenblatt模型"""
 
     def __init__(self, model_path=None, study_path=None):
         """
-        Initialize formal trainer
+        初始化正式训练器
 
-        Parameters:
-        model_path: Path to saved best model
-        study_path: Path to saved Optuna study
+        参数:
+        model_path: 已保存的最佳模型路径
+        study_path: 已保存的Optuna研究路径
         """
         self.model_path = model_path
         self.study_path = study_path
@@ -41,39 +50,39 @@ class FormalTrainer:
 
     def load_model_and_params(self):
         """
-        Load saved model and parameters
+        加载已保存的模型和参数
         """
         import joblib
 
         if self.model_path:
-            # Load from model file
-            print(f"Loading from model file: {self.model_path}")
+            # 从模型文件加载
+            print(f"从模型文件加载: {self.model_path}")
             
-            # Get best available device
+            # 获取最佳设备
             device, _ = setup_device()
             
-            # Load model file with specified device mapping
+            # 加载模型文件并指定设备
             save_dict = torch.load(
                 self.model_path, 
-                weights_only=False,  # Must be False to load hyperparameters
-                map_location=device  # Use auto-detected device
+                weights_only=False,  # 必须为False，需要加载超参数
+                map_location=device  # 使用自动检测的设备
             )
 
-            # Extract parameters
+            # 提取参数
             self.best_params = save_dict["best_params"]
             self.Xi = save_dict["Xi"]
             self.T = save_dict["T"]
             self.D = save_dict["D"]
 
-            print(f"Problem dimension: {self.D}D")
-            print(f"Time interval: [0, {self.T}]")
+            print(f"问题维度: {self.D}D")
+            print(f"时间区间: [0, {self.T}]")
 
-            # Build network layers
+            # 构建网络层
             n_layers = self.best_params["n_layers"]
             hidden_size = self.best_params["hidden_size"]
             layers = [self.D + 1] + [hidden_size] * n_layers + [1]
 
-            # Create model instance
+            # 创建模型
             M = self.best_params["M"]
             N = 50
             Mm = N ** (1 / 5)
@@ -84,80 +93,66 @@ class FormalTrainer:
                 self.Xi, self.T, M, N, self.D, Mm, layers, mode, activation
             )
 
-            # Load model weights
+            # 加载模型权重
             self.loaded_model.model.load_state_dict(save_dict["model_state_dict"])
-            print("✓ Model weights loaded successfully")
+            print("✓ 模型权重加载完成")
 
-            # Print optimal parameters
-            print("\nOptimal hyperparameter configuration:")
+            # 打印最佳参数
+            print("\n最佳超参数配置:")
             for key, value in self.best_params.items():
                 print(f"  {key}: {value}")
 
         elif self.study_path:
-            # Load from study file
-            print(f"Loading from study file: {self.study_path}")
+            # 从研究文件加载
+            print(f"从研究文件加载: {self.study_path}")
             study = joblib.load(self.study_path)
             self.best_params = study.best_trial.params
 
-            # Print optimal parameters
-            print("\nOptimal hyperparameter configuration:")
+            # 打印最佳参数
+            print("\n最佳超参数配置:")
             for key, value in self.best_params.items():
                 print(f"  {key}: {value}")
 
         else:
-            raise ValueError("Must provide either model path or study path")
+            raise ValueError("必须提供模型路径或研究路径")
 
     def get_model(self):
         """
-        Get loaded model instance
+        获取加载的模型
         """
         if not self.loaded_model:
-            raise ValueError("Please load model and parameters first")
+            raise ValueError("请先加载模型和参数")
         return self.loaded_model
 
     def get_params(self):
         """
-        Get optimal parameters
+        获取最佳参数
         """
         if not self.best_params:
-            raise ValueError("Please load model and parameters first")
+            raise ValueError("请先加载模型和参数")
         return self.best_params
 
     def get_problem_params(self):
         """
-        Get problem parameters
+        获取问题参数
         """
         if self.Xi is None or self.T is None or self.D is None:
-            raise ValueError("Please load model and parameters first")
+            raise ValueError("请先加载模型和参数")
         return self.Xi, self.T, self.D
 
 
 def run_model(model, N_Iter1, learning_rate1, Xi, T, D, M):
-    """
-    Run model training and evaluation
-    
-    Parameters:
-    model: Neural network model instance
-    N_Iter1: Number of training iterations
-    learning_rate1: Learning rate for training
-    Xi: Initial state
-    T: Terminal time
-    D: Dimension
-    M: Batch size
-    """
-    # Quick reproduction: skip retraining and use pre-trained model directly
-    total_start_time = time.time()
-    samples = 5  # Number of sample trajectories to visualize
-    print(f"Using device: {model.device}")
-    
-    # Generate timestamp for file naming
+    # 快速复现：跳过重新训练，直接使用预训练模型
+    tot = time.time()
+    samples = 5
+    print(model.device)
+    # 生成时间戳
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+ 
 
-    # Generate test data
     t_test, W_test = model.fetch_minibatch()
     X_pred, Y_pred = model.predict(Xi, t_test, W_test)
 
-    # Convert tensors to numpy arrays if needed
     if type(t_test).__module__ != "numpy":
         t_test = t_test.cpu().numpy()
     if type(X_pred).__module__ != "numpy":
@@ -165,7 +160,6 @@ def run_model(model, N_Iter1, learning_rate1, Xi, T, D, M):
     if type(Y_pred).__module__ != "numpy":
         Y_pred = Y_pred.cpu().detach().numpy()
 
-    # Calculate exact solution for comparison
     Y_test = np.reshape(
         u_exact(
             np.reshape(t_test[0:M, :, :], [-1, 1]),
@@ -175,18 +169,19 @@ def run_model(model, N_Iter1, learning_rate1, Xi, T, D, M):
         [M, -1, 1],
     )
 
-    # Create output directory
+    # 创建输出目录
     save_dir = "Figures"
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
-    # Plot learned vs exact solution
+    # 由于跳过重新训练，不生成训练损失图
+  
+
     plt.figure(figsize=figsize(1))
     plt.plot(t_test[0:1, :, 0].T, Y_pred[0:1, :, 0].T, "b", label="Learned $u(t,X_t)$")
     plt.plot(t_test[0:1, :, 0].T, Y_test[0:1, :, 0].T, "r--", label="Exact $u(t,X_t)$")
     plt.plot(t_test[0:1, -1, 0], Y_test[0:1, -1, 0], "ko", label="$Y_T = u(T,X_T)$")
 
-    # Plot additional sample trajectories
     plt.plot(t_test[1:samples, :, 0].T, Y_pred[1:samples, :, 0].T, "b")
     plt.plot(t_test[1:samples, :, 0].T, Y_test[1:samples, :, 0].T, "r--")
     plt.plot(t_test[1:samples, -1, 0], Y_test[1:samples, -1, 0], "ko")
@@ -210,7 +205,6 @@ def run_model(model, N_Iter1, learning_rate1, Xi, T, D, M):
         bbox_inches="tight",
     )
 
-    # Calculate and plot relative errors
     errors = np.sqrt((Y_test - Y_pred) ** 2 / Y_test**2)
     mean_errors = np.mean(errors, 0)
     std_errors = np.std(errors, 0)
@@ -240,61 +234,62 @@ def run_model(model, N_Iter1, learning_rate1, Xi, T, D, M):
         bbox_inches="tight",
     )
 
-    # Show all plots
-    plt.show()
+  
 
-    return model
+    plt.show()
 
 
 if __name__ == "__main__":
-    # Configuration parameters
-    MODEL_PATH = "optuna_outcomes/models/bsb_best_model_20260118_150740.pth"  # Path to saved best model
-    STUDY_PATH = "optuna_outcomes/studies/bsb_optuna_study.pkl"  # Path to saved study
-    REPORT_PATH = "optuna_outcomes/reports/bsb_optuna_report_20260118_150807.txt"  # Optuna optimization report path
+    # 配置参数
+    MODEL_PATH = "optuna_outcomes/models/bsb_best_model_20260118_150740.pth"  # 已保存的最佳模型路径
+    STUDY_PATH = "optuna_outcomes/studies/bsb_optuna_study.pkl"  # 已保存的研究路径
+    REPORT_PATH = "optuna_outcomes/reports/bsb_optuna_report_20260118_150807.txt"  # Optuna优化报告路径
 
-    # Set random seed for reproducibility
+    # 设置随机种子
     set_seed(42)
     
-    """Main function"""
+    """主函数"""
     print("=" * 80)
-    print("           Black-Scholes-Barenblatt Integrated Model Trainer")
-    print("           Based on Optuna Optimization Results")
+    print("           Black-Scholes-Barenblatt模型整合训练器")
+    print("           基于Optuna优化结果")
     print("=" * 80)
 
-    # Check if files exist
+    # 检查文件是否存在
     if os.path.exists(MODEL_PATH):
         use_model_path = True
-        print(f"✓ Found model file: {MODEL_PATH}")
+        print(f"✓ 找到模型文件: {MODEL_PATH}")
     elif os.path.exists(STUDY_PATH):
         use_model_path = True
-        print(f"✓ Found study file: {STUDY_PATH}")
+        print(f"✓ 找到研究文件: {STUDY_PATH}")
     else:
-        print("❌ No model file or study file found")
+        print("❌ 未找到模型文件或研究文件")
         sys.exit(1)
 
     try:
-        # Create formal trainer instance
+        # 创建正式训练器
         if use_model_path:
             trainer = FormalTrainer(model_path=MODEL_PATH)
         else:
             trainer = FormalTrainer(study_path=STUDY_PATH)
-            # If using study file, provide basic problem parameters
-            trainer.Xi = np.array([1.0, 0.5] * (50 // 2))[None, :]  # 50-dimensional example
+            # 如果使用研究文件，需要提供问题的基本参数
+            trainer.Xi = np.array([1.0, 0.5] * (50 // 2))[None, :]  # 50维示例
             trainer.T = 1.0
             trainer.D = 50
 
-        # Load model and parameters
+        # 加载模型和参数
         trainer.load_model_and_params()
 
-        # Get model and parameters
+        # 获取模型和参数
         model = trainer.get_model()
         best_params = trainer.get_params()
         Xi, T, D = trainer.get_problem_params()
 
-        # Automatically read optimal parameters from Optuna report file
+       
+
+        # 自动从Optuna报告文件读取最优参数
         def load_optuna_report_params(report_path):
             """
-            Read optimal parameters from Optuna report file
+            从Optuna报告文件中读取最优参数
             """
             import re
             
@@ -303,16 +298,16 @@ if __name__ == "__main__":
             
             params = {}
             
-            # Extract optimal hyperparameter configuration section
-            match = re.search(r'Optimal hyperparameter configuration:(.*?)\n\nTrial statistics:', content, re.DOTALL)
+            # 提取最佳超参数配置部分
+            match = re.search(r'最佳超参数配置:(.*?)\n\n试验统计:', content, re.DOTALL)
             if not match:
-                # If trial statistics section not found, try matching end of file
-                match = re.search(r'Optimal hyperparameter configuration:(.*?)$', content, re.DOTALL)
+                # 如果没有找到试验统计部分，尝试匹配文件末尾
+                match = re.search(r'最佳超参数配置:(.*?)$', content, re.DOTALL)
             
             if match:
                 params_section = match.group(1)
                 
-                # Extract individual parameters
+                # 提取各个参数
                 param_patterns = [
                     (r'n_layers: (\d+)', 'n_layers', int),
                     (r'hidden_size: (\d+)', 'hidden_size', int),
@@ -328,43 +323,43 @@ if __name__ == "__main__":
                     if match:
                         params[key] = dtype(match.group(1))
             
-            # Add hardcoded time steps N from Optuna.py
-            params['N'] = 50  # Fixed value from Optuna.py
+            # 添加Optuna.py中硬编码的时间步数N
+            params['N'] = 50  # 从Optuna.py中获取的固定值
             
             return params
         
-        # Use optimal parameters from Optuna report (override parameters from model file)
-        print("\n🔧 Loading optimal parameters from Optuna report file...")
+        # 使用Optuna报告中的最优参数（覆盖模型文件中的参数）
+        print("\n🔧 从Optuna报告文件加载最优参数...")
         report_best_params = load_optuna_report_params(REPORT_PATH)
-        print(f"✓ Parameters read from report: {report_best_params.keys()}")
+        print(f"✓ 从报告文件读取到的参数: {report_best_params.keys()}")
 
-        # Update best parameters
+        # 更新最佳参数
         best_params.update(report_best_params)
-        print("✓ Optuna report parameters applied")
+        print("✓ Optuna报告参数已应用")
 
-        # Set training parameters
-        N_Iter1 = best_params.get("n_iter1", 20000)  # Use 20000 iterations from report
-        learning_rate1 = best_params.get("learning_rate1", 0.00023345864076016249)  # Use learning rate from report
+        # 设置训练参数
+        N_Iter1 = best_params.get("n_iter1", 20000)  # 使用报告中的20000次
+        learning_rate1 = best_params.get("learning_rate1", 0.00023345864076016249)  # 使用报告中的学习率
         
-        # Also update model's N value (number of time steps)
+        # 同时更新模型的N值（时间步数）
         model.N = best_params.get("N", model.N)
-        print(f"\n📊 Updated key parameters:")
-        print(f"   N (time steps): {model.N}")
-        print(f"   n_iter1 (training steps): {N_Iter1}")
+        print(f"\n📊 更新后的关键参数:")
+        print(f"   N (时间步数): {model.N}")
+        print(f"   n_iter1 (训练步数): {N_Iter1}")
         print(f"   learning_rate1: {learning_rate1}")
 
         print("\n" + "=" * 80)
-        print("           Starting Model Training")
+        print("           开始训练模型")
         print("=" * 80)
-        print(f"Training phase: {N_Iter1} iterations, learning_rate={learning_rate1}")
+        print(f"训练阶段: {N_Iter1}次迭代, 学习率={learning_rate1}")
 
-        # Get problem parameters
+        # 获取问题参数
         Xi, T, D = trainer.get_problem_params()
-        M = model.M  # Get batch size
+        M = model.M  # 获取批次大小
 
-        # Print input parameters before calling run_model
+        # 打印run_model调用前的入参
         print("\n" + "=" * 60)
-        print("run_model input parameters:")
+        print("run_model 入参:")
         print("=" * 60)
         print(f"N_Iter1: {N_Iter1}")
         print(f"learning_rate1: {learning_rate1}")
@@ -381,18 +376,19 @@ if __name__ == "__main__":
         print(f"model.N: {model.N}")
         print("=" * 60)
 
-        # Pass parameters to run_model function
-        # Run model training and evaluation
+        # 将参数传递给run_model函数
+        # 运行模型训练和评估
         final_model = run_model(
             model, N_Iter1, learning_rate1, Xi, T, D, M
         )
 
         print("\n" + "=" * 80)
-        print("          Training Completed!")
+        print("           训练完成!")
         print("=" * 80)
 
     except Exception as e:
-        print(f"\n❌ Error during training: {e}")
+        print(f"\n❌ 训练过程中出现错误: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
