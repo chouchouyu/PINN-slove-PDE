@@ -55,7 +55,7 @@ def test_100d_deepbsde(limit=False):
     # Solve using appropriate method based on limit parameter
     if not limit:
         # Standard version without bounds calculation
-        result = solver.solve(limits=False, maxiters=5200)
+        result = solver.solve(limits=False, maxiters=1200)
     else:
         # Version with Legendre transform and bounds calculation
         result = solver.solve(
@@ -63,7 +63,7 @@ def test_100d_deepbsde(limit=False):
             trajectories_upper=1000,  # Number of trajectories for upper bound
             trajectories_lower=1000,  # Number of trajectories for lower bound
             maxiters_limits=10,  # Optimization iterations for bounds
-            maxiters=5200,  # Set same training iterations
+            maxiters=1200,  # Set same training iterations
         )
 
     # Validate results
@@ -113,7 +113,7 @@ def run_fbsnn_100d():
 
     # Train the model
     start_time = time.time()
-    graph = model.train(5200, 1e-3)  # Train for 5200 iterations with learning rate 1e-3
+    graph = model.train(1200, 1e-3)  # Train for 1200 iterations with learning rate 1e-3
     training_time = time.time() - start_time
 
     print(f"FBSNN training time: {training_time:.2f} seconds")
@@ -142,7 +142,7 @@ def compare_methods():
         f"Unified parameters: dimension={D}, time T={T}, interest rate r={r}, volatility σ={sigma}"
     )
     print(f"Initial condition: {x0[:4]}...")  # Show only first 4 elements
-    print(f"Unified training iterations: All methods trained for 5200 iterations")
+    print(f"Unified training iterations: All methods trained for 1200 iterations")
     print()
 
     # Run DeepBSDE methods: standard (limit=False) and Legendre (limit=True)
@@ -374,51 +374,7 @@ def compare_methods():
     )  # Save figure with timestamp
     plt.close()  # Close figure to free memory
 
-    # 5. Output detailed analysis report
-    print("\n" + "=" * 60)
-    print("                Detailed Performance Analysis Report")
-    print("=" * 60)
 
-    print("\n1. Accuracy Analysis (vs Analytical Solution):")
-    accuracy_rank = sorted(
-        zip(methods, errors_analytical), key=lambda x: x[1]
-    )  # Sort by error
-    print("   Accuracy Ranking:")
-    for i, (method, error) in enumerate(accuracy_rank):
-        print(f"   {i+1}. {method}: {error:.2f}%")
-
-    print("\n2. Computational Efficiency Analysis:")
-    speed_rank = sorted(zip(methods, times), key=lambda x: x[1])  # Sort by time
-    print("   Computation Speed Ranking:")
-    for i, (method, time_val) in enumerate(speed_rank):
-        print(f"   {i+1}. {method}: {time_val:.2f} seconds")
-
-    print("\n3. Method Characteristics Comparison:")
-    print(
-        "   - DeepBSDE Standard: Simple implementation, strong theoretical guarantees, moderate complexity"
-    )
-    print(
-        "   - DeepBSDE Legendre: Provides confidence intervals, stronger theoretical guarantees, slightly higher complexity"
-    )
-    print(
-        "   - FBSNN: Best adaptability for high-dimensional problems, solid PDE framework, but longer training time"
-    )
-
-    print("\n4. Recommended Application Scenarios:")
-    print("   ✅ DeepBSDE Standard Recommended Scenarios:")
-    print("      • Need for quick baseline verification")
-    print("      • Medium-dimensional problems (10-500 dimensions)")
-    print("      • High theoretical rigor requirements")
-
-    print("   ✅ DeepBSDE Legendre Recommended Scenarios:")
-    print("      • Need for confidence interval estimation")
-    print("      • Higher requirements for result reliability")
-    print("      • Sufficient computational resources available")
-
-    print("   ✅ FBSNN Recommended Scenarios:")
-    print("      • High-dimensional PDE problem research")
-    print("      • Sufficient computational resources available")
-    print("      • Need for continuous-time modeling")
 
     # Return comprehensive results dictionary
     return {

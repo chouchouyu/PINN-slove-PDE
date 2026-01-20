@@ -1,32 +1,11 @@
-================================================================================
-           Black-Scholes-Barenblatt Optuna优化报告
-================================================================================
+2.6.2 Training and Optimization
 
-报告生成时间: 2026-01-18 11:41:17
-问题维度: 100D
-时间区间: [0, 1.0]
+The training of a neural network is an optimization task. Its goal is to find the set of parameters $\theta$ that minimizes a loss function, $\mathcal{J}(\theta)$. The form of this function is problem-specific.
 
-最佳试验结果:
-  试验编号: #1
-  最终损失: 3.385898
-  相对误差: 0.679359
-  训练时间: 2706.54秒
+The minimization is typically achieved using gradient-based algorithms. A standard approach is gradient descent, or one of its variants, where the parameters are updated at each training iteration $k$ according to the rule:
 
-最佳超参数配置:
-  n_layers: 3
-  hidden_size: 512
-  activation: Tanh
-  mode: Naisnet
-  M: 100
-  learning_rate1: 0.00023345864076016249
-  n_iter1: 20000
-  网络结构: [101, 512, 512, 512, 1]
+$$
+\theta_{k+1} = \theta_{k} - \alpha \nabla_{\theta} \mathcal{J}(\theta_{k}),
+$$
 
-试验统计:
-  完成试验: 2
-  失败试验: 0
-  总试验数: 2
-  平均误差: 0.672585
-  最佳误差: 0.665811
-  最差误差: 0.679359
-  平均时间: 2845.12秒
+where $\alpha > 0$ is the learning rate.

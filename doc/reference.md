@@ -184,3 +184,7 @@ https://yb.tencent.com/s/BeDZB6MqIWNe
 
 https://mp.weixin.qq.com/s/bKc3bdP1BR6yrIwIZeDkyQ
 美式期权(一)：最小二乘蒙特卡洛模拟定价(LSM)
+
+
+https://github.com/ananyo49/Least-Square-Monte-Carlo-American-Options-?tab=readme-ov-file
+Least-Square-Monte-Carlo-America-Options-
