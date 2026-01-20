@@ -1,0 +1,32 @@
+================================================================================
+           Black-Scholes-Barenblatt Optuna Optimization Report
+================================================================================
+
+Report generation time: 2026-01-18 15:08:07
+Problem dimension: 100D
+Time interval: [0, 1.0]
+
+Best trial results:
+  Trial number: #1
+  Final loss: 3.629223
+  Relative error: 0.677466
+  Training time: 2951.76 seconds
+
+Best hyperparameter configuration:
+  n_layers: 3
+  hidden_size: 512
+  activation: Tanh
+  mode: Naisnet
+  M: 100
+  learning_rate1: 0.00023345864076016249
+  n_iter1: 20000
+  Network structure: [101, 512, 512, 512, 1]
+
+Trial statistics:
+  Completed trials: 2
+  Failed trials: 0
+  Total trials: 2
+  Average error: 0.671639
+  Best error: 0.665811
+  Worst error: 0.677466
+  Average time: 3002.32 seconds
